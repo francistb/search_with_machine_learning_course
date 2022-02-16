@@ -79,10 +79,11 @@ def query():
         query_obj = create_query("*", [], sort, sortDir)
 
     print("query obj: {}".format(query_obj))
-    response = None  # TODO: Replace me with an appropriate call to OpenSearch
+    response = opensearch.search(query_obj, index="bbuy_products")
     # Postprocess results here if you so desire
 
-    # print(response)
+    #print(response)
+
     if error is None:
         return render_template(
             "search_results.jinja2",
@@ -102,8 +103,22 @@ def create_query(user_query, filters, sort="_score", sortDir="desc"):
     query_obj = {
         "size": 10,
         "query": {
-            "match_all": {}  # Replace me with a query that both searches and filters
-        },
+            "bool": {
+                "must": [
+                    {
+                        "multi_match": {
+                            "query": user_query,
+                            "fields": [
+                                "name^4",
+                                "shortDescription^2",
+                                "longDescription",
+                            ],
+                        }
+                    }
+                ],
+                "filter": [],
+            }
+        },  # Replace me with a query that both searches and filters
         "aggs": {
             # TODO: FILL ME IN
         },
