@@ -1,5 +1,48 @@
 {
   "settings": {
     "index.refresh_interval": "5s"
+  },
+  "mappings" : {
+    "properties" : {
+      "@timestamp" : {
+        "type" : "date"
+      },
+      "@version" : {
+        "type" : "text",
+        "fields" : {
+          "keyword" : {
+            "type" : "keyword",
+            "ignore_above" : 256
+          }
+        }
+      },
+      "category" : {
+        "type" : "keyword",
+        "ignore_above" : 256
+      },
+      "click_time" : {
+        "type" : "keyword"
+      },
+      "query" : {
+        "type" : "text",
+        "analyzer": "english",
+        "fields" : {
+          "keyword" : {
+            "type" : "keyword",
+            "ignore_above" : 256
+          }
+        }
+      },
+      "query_time" : {
+        "type" : "keyword"
+      },
+      "sku" : {
+        "type" : "integer"
+      },
+      "user" : {
+        "type" : "keyword",
+        "ignore_above" : 256  
+      }
+    }
   }
 }
