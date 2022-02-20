@@ -17,7 +17,6 @@
         </div>{% endif %}
     {% endfor %}
   </div>
-  {#Add in Department aggregation display here #}
   <div class="aggregations-result">
     <div class="agg-header">Department</div>
     {% for agg in search_response.aggregations.department.buckets %}

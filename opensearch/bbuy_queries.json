@@ -21,7 +21,7 @@
         "ignore_above" : 256
       },
       "click_time" : {
-        "type" : "keyword"
+        "type" : "date"
       },
       "query" : {
         "type" : "text",
@@ -34,10 +34,10 @@
         }
       },
       "query_time" : {
-        "type" : "keyword"
+        "type" : "date"
       },
       "sku" : {
-        "type" : "integer"
+        "type" : "long"
       },
       "user" : {
         "type" : "keyword",
