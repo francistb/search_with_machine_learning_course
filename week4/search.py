@@ -10,6 +10,12 @@ from week4.opensearch import get_opensearch
 import week4.utilities.query_utils as qu
 import week4.utilities.ltr_utils as lu
 
+import nltk
+import re
+import json
+
+stemmer = nltk.stem.PorterStemmer()
+
 bp = Blueprint('search', __name__, url_prefix='/search')
 
 
@@ -56,9 +62,18 @@ def process_filters(filters_input):
 
     return filters, display_filters, applied_filters
 
-def get_query_category(user_query, query_class_model):
-    print("IMPLEMENT ME: get_query_category")
-    return None
+
+def get_query_category(user_query, query_class_model, threshold):
+    normalized_query = " ".join((stemmer.stem(w) for w in re.sub("[^0-9a-zA-Z]+", " ", user_query).lower().split()))
+    predictions = list(reversed(list(zip(*query_class_model.predict(normalized_query, 10)))))
+    selected = []
+    total = 0
+    while predictions and total < threshold:
+        cat, prob = predictions.pop()
+        selected.append(cat.lstrip("__label__"))
+        total += prob
+    return selected
+    #return [cat.lstrip("__label__") for cat, prob in zip(*predictions) if prob > threshold]
 
 
 @bp.route('/query', methods=['GET', 'POST'])
@@ -121,7 +136,7 @@ def query():
             explain = True
         if filters_input:
             (filters, display_filters, applied_filters) = process_filters(filters_input)
-        model = request.args.get("model", "simiple")
+        model = request.args.get("model", "simple")
         if model == "simple_LTR":
             query_obj = qu.create_simple_baseline(user_query, click_prior, filters, sort, sortDir, size=500)
             query_obj = lu.create_rescore_ltr_query(user_query, query_obj, click_prior, ltr_model_name, ltr_store_name, rescore_size=500)
@@ -136,10 +151,15 @@ def query():
         query_obj = qu.create_query("*", "", [], sort, sortDir, size=100)
 
     query_class_model = current_app.config["query_model"]
-    query_category = get_query_category(user_query, query_class_model)
-    if query_category is not None:
-        print("IMPLEMENT ME: add this into the filters object so that it gets applied at search time.  This should look like your `term` filter from week 1 for department but for categories instead")
-    #print("query obj: {}".format(query_obj))
+    threshold = 0.5
+    query_categories = get_query_category(user_query, query_class_model, threshold)
+    print(f"Predicted categories with confidence>{threshold} : {query_categories}")
+    if "bool" in query_obj["query"] and query_categories :
+        if "filter" not in query_obj["query"]["bool"]:
+            query_obj["query"]["bool"]["filter"] = []
+        query_obj["query"]["bool"]["filter"].append({"terms": {"categoryPathIds": query_categories}})
+
+    print(f"query obj: {json.dumps(query_obj)}")
     response = opensearch.search(body=query_obj, index=current_app.config["index_name"], explain=explain)
     # Postprocess results here if you so desire
 
@@ -147,7 +167,8 @@ def query():
     if error is None:
         return render_template("search_results.jinja2", query=user_query, search_response=response,
                                display_filters=display_filters, applied_filters=applied_filters,
-                               sort=sort, sortDir=sortDir, model=model, explain=explain, query_category=query_category)
+                               sort=sort, sortDir=sortDir, model=model, explain=explain,
+                               query_category=query_categories)
     else:
         redirect(url_for("index"))
 
