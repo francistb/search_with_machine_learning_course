@@ -1,6 +1,6 @@
 input {
   file {
-    path => ["/workspace/datasets/product_data/products/*.xml"]  #Put in the path to the ungzipped/untarred product data.  To start smaller, simply select a smaller number of files or copy a few files to a different directory.
+    path => ["/home/fboutin/datasets/bbuy/product_data/products/*.xml"]  #Put in the path to the ungzipped/untarred product data.  To start smaller, simply select a smaller number of files or copy a few files to a different directory.
     start_position => "beginning"
     codec => multiline {
             pattern => "<product>"
@@ -85,12 +85,13 @@ input {
 
     }
 output {
-  opensearch {
-    hosts => ["https://localhost:9200"]
-    index => "bbuy_products"
-    user => "admin"
-    password => "admin"
-    document_id => "%{sku}"
-    ssl_certificate_verification => false
-  }
+  stdout { codec => json }
+  #opensearch {
+  #  hosts => ["https://localhost:9200"]
+  #  index => "bbuy_products"
+  #  user => "admin"
+  #  password => "admin"
+  #  document_id => "%{sku}"
+  #  ssl_certificate_verification => false
+  #}
 }
